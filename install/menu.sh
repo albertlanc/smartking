@@ -8,13 +8,11 @@ NC='\e[0m'     # No Color
 # 🔒 ADVANCED IP WHITELIST LICENSING SYSTEM
 # ==========================================
 SERVER_IP=$(curl -sS ipv4.icanhazip.com || hostname -I | awk '{print $1}')
-MASTER_IP="174.138.0.41" # Developer IP - Immune to lockout
-WHITELIST_URL="https://raw.githubusercontent.com/albertlanc/VPNPROJ/main/whitelist.txt"
+MASTER_IP="104.105.205.88" # Developer IP
+WHITELIST_URL="https://raw.githubusercontent.com/albertlanc/smartking/main/whitelist.txt"
 
 if [ "$SERVER_IP" != "$MASTER_IP" ]; then
-    # Fetch the list of allowed IPs from your GitHub
     VALID_IP=$(curl -sS "$WHITELIST_URL" 2>/dev/null | grep -w "$SERVER_IP")
-    
     if [ -z "$VALID_IP" ]; then
         clear
         echo -e "${R}────────────────────────────────────────────────────────${NC}"
@@ -27,9 +25,7 @@ if [ "$SERVER_IP" != "$MASTER_IP" ]; then
         exit 1
     fi
 fi
-# ==========================================
 
-# Helper Function: Checks if service is running
 chk_svc() {
     if systemctl is-active --quiet $1 2>/dev/null; then
         echo -e "${W}ON ${NC}"
@@ -40,11 +36,7 @@ chk_svc() {
 
 while true; do
     clear
-    echo -e "${Y}────────────────────────────────────────────────────────${NC}"
-    echo -e "         ${Y}SMARTKING4LUV ™ System Information${NC}"
-    echo -e "${Y}────────────────────────────────────────────────────────${NC}"
     
-    # System Info Variables
     OS_VER=$(source /etc/os-release && echo "$PRETTY_NAME")
     GEO_INFO=$(curl -s "http://ip-api.com/json/$SERVER_IP" 2>/dev/null)
     if echo "$GEO_INFO" | grep -q "success"; then
@@ -56,44 +48,34 @@ while true; do
     fi
     CUR_DATE=$(date "+%Y-%m-%d")
     CUR_TIME=$(date "+%H:%M:%S")
-    ACTIVE_USERS=$(who | awk '{print $1}' | sort -u | wc -l)
+    ACTIVE_USERS=$(who | awk '{print $1}' | sort -u | wc -l | tr -d ' \n\r')
 
-    # Print System Info
+    echo -e "${Y}────────────────────────────────────────────────────────${NC}"
+    echo -e "         ${Y}SMARTKING4LUV ™ System Information${NC}"
+    echo -e "${Y}────────────────────────────────────────────────────────${NC}"
     echo -e "  ${Y}System OS     :${W} $OS_VER${NC}"
     echo -e "  ${Y}Server IP     :${W} $SERVER_IP ($LOC_STR)${NC}"
     echo -e "  ${Y}Date / Time   :${W} $CUR_DATE | $CUR_TIME${NC}"
     echo -e "  ${Y}Active Users  :${W} $ACTIVE_USERS User(s) Online${NC}"
     echo -e "  ${Y}Developer     :${W} T.me/SmartKing4Luv${NC}"
 
-    # Fetch Real-Time Account Numbers
-    SSH_USERS=$(awk -F: '$3 >= 1000 && $1 != "nobody" {print $1}' /etc/passwd | wc -l)
-    VMESS_USERS=$(grep -c "vmess" /etc/xray/config.json 2>/dev/null || echo "0")
-    VLESS_USERS=$(grep -c "vless" /etc/xray/config.json 2>/dev/null || echo "0")
-    TROJAN_USERS=$(grep -c "trojan" /etc/xray/config.json 2>/dev/null || echo "0")
+    SSH_USERS=$(awk -F: '$3 >= 1000 && $1 != "nobody" {print $1}' /etc/passwd | wc -l | tr -d ' \n\r')
+    VMESS_USERS=$(grep -c "vmess" /etc/xray/config.json 2>/dev/null || echo "0" | tr -d ' \n\r')
+    VLESS_USERS=$(grep -c "vless" /etc/xray/config.json 2>/dev/null || echo "0" | tr -d ' \n\r')
+    TROJAN_USERS=$(grep -c "trojan" /etc/xray/config.json 2>/dev/null || echo "0" | tr -d ' \n\r')
 
-    SSH_U=$(printf "%-3s" "${SSH_USERS}")
-    VMESS_U=$(printf "%-3s" "${VMESS_USERS}")
-    VLESS_U=$(printf "%-3s" "${VLESS_USERS}")
-    TROJAN_U=$(printf "%-3s" "${TROJAN_USERS}")
-
-    # Fetch Real-Time Service Status
     STS_SSH=$(chk_svc ssh)
     STS_NGINX=$(chk_svc nginx)
     STS_XRAY=$(chk_svc xray)
     STS_DROPBEAR=$(chk_svc dropbear)
-    if systemctl is-active --quiet ws-dropbear 2>/dev/null || pgrep -f "ws" > /dev/null; then 
-        STS_WS="${W}ON ${NC}"
-    else 
-        STS_WS="${W}OFF${NC}"
-    fi
+    STS_WS=$(chk_svc ws-dropbear)
 
-    # Premium Protocol Accounts Block
+    # Perfect Aligned Protocol Box
     echo -e "${Y}┌──────────────────────────────────────────────────────┐${NC}"
-    echo -e "${Y}│${NC}       ${Y}SSH${NC}        ${Y}VMESS${NC}        ${Y}VLESS${NC}       ${Y}TROJAN${NC}     ${Y}│${NC}"
-    echo -e "${Y}│${NC}       ${W}${SSH_U}${NC}        ${W}${VMESS_U}${NC}          ${W}${VLESS_U}${NC}         ${W}${TROJAN_U}${NC}        ${Y}│${NC}"
+    printf "${Y}│${NC}  ${Y}SSH:${W}%-2s  ${Y}VMESS:${W}%-2s  ${Y}VLESS:${W}%-2s  ${Y}TROJAN:${W}%-2s      ${Y}│${NC}\n" "$SSH_USERS" "$VMESS_USERS" "$VLESS_USERS" "$TROJAN_USERS"
     echo -e "${Y}└──────────────────────────────────────────────────────┘${NC}"
 
-    # Premium Services Status Block
+    # Perfect Aligned Services Box
     echo -e "${Y}┌──────────────────────────────────────────────────────┐${NC}"
     echo -e "${Y}│${NC}   ${Y}SSH${NC} : ${STS_SSH}        ${Y}NGINX${NC} : ${STS_NGINX}         ${Y}XRAY${NC} : ${STS_XRAY}    ${Y}│${NC}"
     echo -e "${Y}│${NC}        ${Y}DROPBEAR${NC} : ${STS_DROPBEAR}        ${Y}SSH-WS${NC} : ${STS_WS}            ${Y}│${NC}"
