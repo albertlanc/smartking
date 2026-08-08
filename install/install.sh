@@ -1,16 +1,39 @@
 #!/bin/bash
 BLUE='\e[1;34m'
+WHITE='\e[1;37m'
 NC='\e[0m'
 
+clear
 echo -e "${BLUE}──────────────────────────────────────────────${NC}"
-echo -e "${BLUE}     SMARTKING4LUV ™ VPN MANAGER SETUP        ${NC}"
+echo -e "${BLUE}     SMARTKING4LUV ™ SERVER INITIALIZATION    ${NC}"
 echo -e "${BLUE}──────────────────────────────────────────────${NC}"
+echo -e ""
+# 1. Prompt for Domain and NameServer
+read -p " Enter your Domain Name (e.g. vpn.example.com) : " DOMAIN
+read -p " Enter your NameServer (NS) (e.g. ns.example.com) : " NS_DOMAIN
 
-echo -e "  [1/5] Installing System Dependencies..."
+# Save them to root so your manager scripts can read them later
+echo "$DOMAIN" > /root/domain.txt
+echo "$NS_DOMAIN" > /root/nsdomain.txt
+echo -e ""
+
+echo -e "  ${WHITE}[1/6] Installing System Dependencies...${NC}"
 apt-get update -y >/dev/null 2>&1
-apt-get install -y curl wget unzip zip jq nginx dropbear socat python3 >/dev/null 2>&1
+apt-get install -y curl wget unzip zip jq nginx dropbear socat python3 certbot >/dev/null 2>&1
 
-echo -e "  [2/5] Configuring Protocol Services..."
+echo -e "  ${WHITE}[2/6] Validating SSL Certificate...${NC}"
+systemctl stop nginx 2>/dev/null
+# Automatically issue SSL via Certbot
+certbot certonly --standalone -d "$DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email >/dev/null 2>&1
+systemctl start nginx 2>/dev/null
+
+echo -e "  ${WHITE}[3/6] Installing SlowDNS (DNSTT)...${NC}"
+mkdir -p /etc/slowdns
+# Download pre-compiled 64-bit SlowDNS binary
+wget -qO /usr/local/bin/dnstt-server "https://raw.githubusercontent.com/massdns/dnstt/master/dnstt-server/dnstt-server" 2>/dev/null || echo "Note: dnstt-server must be compiled manually if direct link fails."
+chmod +x /usr/local/bin/dnstt-server 2>/dev/null
+
+echo -e "  ${WHITE}[4/6] Configuring Protocol Services...${NC}"
 sed -i 's/NO_START=1/NO_START=0/g' /etc/default/dropbear 2>/dev/null
 systemctl enable dropbear >/dev/null 2>&1
 systemctl restart dropbear >/dev/null 2>&1
@@ -73,21 +96,16 @@ systemctl enable ssh-ws >/dev/null 2>&1
 systemctl start ssh-ws >/dev/null 2>&1
 systemctl restart nginx >/dev/null 2>&1
 
-echo -e "  [3/5] Applying BBR Speed Optimizations..."
-if [ -f "bbr-setup.sh" ]; then
-    chmod +x bbr-setup.sh
-    ./bbr-setup.sh >/dev/null 2>&1
-fi
-
-echo -e "  [4/5] Organizing System Files..."
+echo -e "  ${WHITE}[5/6] Organizing System Files...${NC}"
 mkdir -p /root/my-ssh-manager
 cp -f *.sh /root/my-ssh-manager/ 2>/dev/null
 chmod +x /root/my-ssh-manager/*.sh 2>/dev/null
 
-echo -e "  [5/5] Finalizing Menu Shortcut..."
+echo -e "  ${WHITE}[6/6] Finalizing Menu Shortcut...${NC}"
 cp -f menu.sh /usr/local/bin/menu
 chmod +x /usr/local/bin/menu
 
 echo -e "\n  ${BLUE}Installation Complete!${NC}"
-echo -e "  Type menu to launch your dashboard.\n"
+echo -e "  Active Domain : $DOMAIN"
+echo -e "  Type ${WHITE}menu${NC} to launch your dashboard.\n"
 echo -e "${BLUE}──────────────────────────────────────────────${NC}"
