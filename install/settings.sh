@@ -1,18 +1,13 @@
-
-
-
-
-
 #!/bin/bash
-B='\e[38;5;24m' # Deep Blue
-M='\e[1;35m'   # Magenta
-C='\e[0;36m'   # Cyan
-G='\e[1;32m'   # Green
-R='\e[1;31m'   # Red
-NC='\e[0m'     # No Color
+B='\e[38;5;24m'
+M='\e[1;35m'
+C='\e[0;36m'
+G='\e[1;32m'
+R='\e[1;31m'
+NC='\e[0m'
 clear
 echo -e "${B}╔══════════════════════════════════════════════════════╗${NC}"
-echo -e "${B}║${M}           SYSTEM SETTINGS & AUTO-REBOOT              ${B}║${NC}"
+echo -e "${B}║${M}           SYSTEM SETTINGS & PORT MANAGER             ${B}║${NC}"
 echo -e "${B}╚══════════════════════════════════════════════════════╝${NC}"
 echo -e "  ${C}[1]${NC} Set Daily Auto-Reboot Time"
 echo -e "  ${C}[2]${NC} Disable Auto-Reboot"
@@ -135,7 +130,7 @@ case $option in
                 fi
                 ;;
             *)
-                echo -e "\n${R}[!] Returning to settings...${NC}"
+                echo -e "\n${R}[!] Returning...${NC}"
                 ;;
         esac
         ;;
