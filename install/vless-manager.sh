@@ -10,7 +10,7 @@ XRAY_CONF="/etc/xray/config.json"
 DB_DIR="/etc/smartking/vless"
 mkdir -p "$DB_DIR"
 touch "$DB_DIR/users.db"
-HOST="te.gregsmarty.co.uk"
+HOST="$(cat /root/domain.txt)"
 
 clear
 echo -e "${B}────────────────────────────────────────────────────────${NC}"

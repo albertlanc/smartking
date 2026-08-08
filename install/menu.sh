@@ -5,15 +5,12 @@ GREEN='\e[1;32m'
 RED='\e[1;31m'
 NC='\e[0m'
 
-# License Verification
 MY_IP=$(curl -s https://api.ipify.org || curl -s https://ipv4.icanhazip.com)
 WHITELIST_URL="https://raw.githubusercontent.com/albertlanc/smartking/main/install/whitelist.txt?v=$(date +%s)"
 
 if ! curl -s "$WHITELIST_URL" | grep -q "$MY_IP"; then
     echo -e "\n${RED}  [!] ACCESS DENIED: UNLICENSED SERVER${NC}"
     echo -e "  Your Server IP : ${GREEN}$MY_IP${NC} is not registered."
-    echo -e "  Please contact the developer to purchase a license."
-    echo -e "  Telegram       : T.me/SmartKing4Luv\n"
     exit 1
 fi
 
@@ -65,7 +62,6 @@ echo -e "${BLUE}└────────────────────�
 echo -e ""
 read -p "Select an Option [ 1 - 9 ] : " option
 
-# Execution Routing (Fixes dropping to root)
 case $option in
     1) bash /root/my-ssh-manager/ssh-manager.sh ;;
     2) bash /root/my-ssh-manager/vmess-manager.sh ;;

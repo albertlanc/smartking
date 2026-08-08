@@ -6,7 +6,7 @@ G='\e[1;32m'   # Green
 R='\e[1;31m'   # Red
 NC='\e[0m'     # No Color
 
-HOST="te.gregsmarty.co.uk"
+HOST="$(cat /root/domain.txt)"
 
 clear
 echo -e "${B}────────────────────────────────────────────────────────${NC}"
