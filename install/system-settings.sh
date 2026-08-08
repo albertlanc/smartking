@@ -289,7 +289,7 @@ except Exception as e:
         ;;
     10|10)
         clear
-        PUBKEY="68a93ff4e08ea51657ede89c8dcc6534088d8461c1209743c11b96399beb1408"
+        PUBKEY="$(cat /etc/slowdns/server.pub 2>/dev/null || echo "Not Configured")"
         if [ -f /root/slowdns/server.pub ]; then
             PUBKEY=$(cat /root/slowdns/server.pub)
         fi
@@ -297,7 +297,7 @@ except Exception as e:
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
         echo -e "                 ${Y}SLOWDNS KEY MANAGER${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
-        echo -e "${C}Current Type : THETECHSAVAGE (Default)${NC}"
+        echo -e "${C}Current Type : SmartKing Default (Default)${NC}"
         echo -e "${C}PubKey       :${NC}"
         echo -e "${C}$PUBKEY${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
