@@ -1,20 +1,21 @@
+
+
+
 #!/bin/bash
-Y='\e[1;33m'   # Yellow/Gold
+M='\e[1;35m'   # Magenta
 B='\e[38;5;24m' # Deep Blue
 C='\e[0;36m'   # Cyan
 G='\e[1;32m'   # Green
 R='\e[1;31m'   # Red
 NC='\e[0m'     # No Color
-
 XRAY_CONF="/etc/xray/config.json"
 DB_DIR="/etc/smartking/vmess"
 mkdir -p "$DB_DIR"
 touch "$DB_DIR/users.db"
 HOST="$(cat /root/domain.txt)"
-
 clear
 echo -e "${B}────────────────────────────────────────────────────────${NC}"
-echo -e "                 ${Y}XRAY VMESS MANAGER${NC}"
+echo -e "                 ${M}XRAY VMESS MANAGER${NC}"
 echo -e "${B}────────────────────────────────────────────────────────${NC}"
 echo -e ""
 echo -e "    ${C}[01]${G} Create VMESS Account${NC}"
@@ -31,47 +32,47 @@ echo -e "    ${C}[00]${G} Back to Main Menu${NC}"
 echo -e "${B}────────────────────────────────────────────────────────${NC}"
 echo -e ""
 read -p " Select menu : " option
-
 case $option in
     1|01)
         clear
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
-        echo -e "               ${Y}ADD VMESS ACCOUNT${NC}"
+        echo -e "               ${M}ADD VMESS ACCOUNT${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
         read -p " Username   : " user
-        
         if grep -qw "^vmess:$user" "$DB_DIR/users.db"; then
             echo -e "\n${R}[!] VMESS User '$user' already exists.${NC}"
         else
             read -p " Expired    : " days
             [[ -z "$days" ]] && days=30
-            
             uuid=$(xray uuid)
             exp_date=$(TZ="Africa/Lagos" date -d "+$days days" +"%b %d, %Y")
             sys_exp=$(TZ="Africa/Lagos" date -d "+$days days" +"%Y-%m-%d")
-            
             jq '.inbounds |= map(if .protocol == "vmess" then .settings.clients += [{"id": "'$uuid'", "level": 0, "email": "'$user'"}] else . end)' $XRAY_CONF > /tmp/xray.json && mv /tmp/xray.json $XRAY_CONF
             cp /etc/xray/config.json /usr/local/etc/xray/config.json
             systemctl restart xray
-            
             echo "vmess:$user:$uuid:$sys_exp" >> "$DB_DIR/users.db"
             MYIP=$(curl -sS ipv4.icanhazip.com)
             
-            v_tls="vmess://${uuid}@${HOST}:443?encryption=none&security=tls&type=ws&path=%2Fvmess&sni=${HOST}#${user}-TLS"
-            v_upg="vmess://${uuid}@${HOST}:443?encryption=none&security=none&type=ws&path=%2Fvmess#${user}-Upgrade"
-            v_notls="vmess://${uuid}@${HOST}:80?encryption=none&security=none&type=ws&path=%2Fvmess#${user}-NoTLS"
+            json_tls='{"v":"2","ps":"'${user}'-TLS","add":"'${HOST}'","port":"443","id":"'${uuid}'","aid":"0","scy":"auto","net":"ws","type":"none","host":"'${HOST}'","path":"/vmess","tls":"tls","sni":"'${HOST}'","alpn":""}'
+            v_tls="vmess://$(echo -n "$json_tls" | base64 -w 0)"
+            
+            json_upg='{"v":"2","ps":"'${user}'-Upgrade","add":"'${HOST}'","port":"443","id":"'${uuid}'","aid":"0","scy":"auto","net":"ws","type":"none","host":"'${HOST}'","path":"/vmess","tls":"","sni":"","alpn":""}'
+            v_upg="vmess://$(echo -n "$json_upg" | base64 -w 0)"
+            
+            json_notls='{"v":"2","ps":"'${user}'-NoTLS","add":"'${HOST}'","port":"80","id":"'${uuid}'","aid":"0","scy":"auto","net":"ws","type":"none","host":"'${HOST}'","path":"/vmess","tls":"","sni":"","alpn":""}'
+            v_notls="vmess://$(echo -n "$json_notls" | base64 -w 0)"
             
             clear
             echo -e "${C}Time Reboot VPS     = Not Set${NC}"
             echo -e "${B}────────────────────────────────────────────────────────${NC}"
-            echo -e "           ${Y}SMARTKING4LUV VPN MANAGER${NC}"
+            echo -e "           ${M}SMARTKING4LUV VPN MANAGER${NC}"
             echo -e "${B}────────────────────────────────────────────────────────${NC}"
             echo -e "${C}Use Core      :${G} Xray-Core 2023${NC}"
             echo -e "${C}IP-VPS        :${G} $MYIP${NC}"
             echo -e "${B}────────────────────────────────────────────────────────${NC}"
-            echo -e "        ${Y}THANKS FOR USING SMARTKING4LUV AUTOSCRIPT${NC}"
+            echo -e "        ${M}THANKS FOR USING SMARTKING4LUV AUTOSCRIPT${NC}"
             echo -e "${B}────────────────────────────────────────────────────────${NC}"
-            echo -e "               ${Y}VMESS ACCOUNT CREATED${NC}"
+            echo -e "               ${M}VMESS ACCOUNT CREATED${NC}"
             echo -e "${B}────────────────────────────────────────────────────────${NC}"
             echo -e "${C}Remarks       :${G} $user${NC}"
             echo -e "${C}Domain        :${G} $HOST${NC}"
@@ -95,29 +96,32 @@ case $option in
         uuid=$(xray uuid)
         exp_date="24 Hours (Trial)"
         sys_exp=$(TZ="Africa/Lagos" date -d "+1 day" +"%Y-%m-%d")
-        
         jq '.inbounds |= map(if .protocol == "vmess" then .settings.clients += [{"id": "'$uuid'", "level": 0, "email": "'$trial_user'"}] else . end)' $XRAY_CONF > /tmp/xray.json && mv /tmp/xray.json $XRAY_CONF
         cp /etc/xray/config.json /usr/local/etc/xray/config.json
         systemctl restart xray
-        
         echo "vmess:$trial_user:$uuid:$sys_exp" >> "$DB_DIR/users.db"
         MYIP=$(curl -sS ipv4.icanhazip.com)
         
-        v_tls="vmess://${uuid}@${HOST}:443?encryption=none&security=tls&type=ws&path=%2Fvmess&sni=${HOST}#${trial_user}-TLS"
-        v_upg="vmess://${uuid}@${HOST}:443?encryption=none&security=none&type=ws&path=%2Fvmess#${trial_user}-Upgrade"
-        v_notls="vmess://${uuid}@${HOST}:80?encryption=none&security=none&type=ws&path=%2Fvmess#${trial_user}-NoTLS"
+        json_tls='{"v":"2","ps":"'${trial_user}'-TLS","add":"'${HOST}'","port":"443","id":"'${uuid}'","aid":"0","scy":"auto","net":"ws","type":"none","host":"'${HOST}'","path":"/vmess","tls":"tls","sni":"'${HOST}'","alpn":""}'
+        v_tls="vmess://$(echo -n "$json_tls" | base64 -w 0)"
+        
+        json_upg='{"v":"2","ps":"'${trial_user}'-Upgrade","add":"'${HOST}'","port":"443","id":"'${uuid}'","aid":"0","scy":"auto","net":"ws","type":"none","host":"'${HOST}'","path":"/vmess","tls":"","sni":"","alpn":""}'
+        v_upg="vmess://$(echo -n "$json_upg" | base64 -w 0)"
+        
+        json_notls='{"v":"2","ps":"'${trial_user}'-NoTLS","add":"'${HOST}'","port":"80","id":"'${uuid}'","aid":"0","scy":"auto","net":"ws","type":"none","host":"'${HOST}'","path":"/vmess","tls":"","sni":"","alpn":""}'
+        v_notls="vmess://$(echo -n "$json_notls" | base64 -w 0)"
         
         clear
         echo -e "${C}Time Reboot VPS     = Not Set${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
-        echo -e "           ${Y}SMARTKING4LUV VPN MANAGER${NC}"
+        echo -e "           ${M}SMARTKING4LUV VPN MANAGER${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
         echo -e "${C}Use Core      :${G} Xray-Core 2023${NC}"
         echo -e "${C}IP-VPS        :${G} $MYIP${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
-        echo -e "        ${Y}THANKS FOR USING SMARTKING4LUV AUTOSCRIPT${NC}"
+        echo -e "        ${M}THANKS FOR USING SMARTKING4LUV AUTOSCRIPT${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
-        echo -e "               ${Y}VMESS TRIAL ACCOUNT CREATED${NC}"
+        echo -e "               ${M}VMESS TRIAL ACCOUNT CREATED${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
         echo -e "${C}Remarks       :${G} $trial_user${NC}"
         echo -e "${C}Domain        :${G} $HOST${NC}"
@@ -137,37 +141,39 @@ case $option in
     3|03)
         clear
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
-        echo -e "             ${Y}CREATE TIMED VMESS ACCOUNT${NC}"
+        echo -e "             ${M}CREATE TIMED VMESS ACCOUNT${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
         read -p " Username   : " user
         read -p " Minutes    : " minutes
         [[ -z "$minutes" ]] && minutes=10
-        
         uuid=$(xray uuid)
         exp_time=$(TZ="UTC" date -d "+$minutes minutes" +"%H:%M UTC")
         MYIP=$(curl -sS ipv4.icanhazip.com)
-        
         jq '.inbounds |= map(if .protocol == "vmess" then .settings.clients += [{"id": "'$uuid'", "level": 0, "email": "'$user'"}] else . end)' $XRAY_CONF > /tmp/xray.json && mv /tmp/xray.json $XRAY_CONF
         cp /etc/xray/config.json /usr/local/etc/xray/config.json
         systemctl restart xray
-        
         echo "jq '.inbounds |= map(if .protocol == \"vmess\" then .settings.clients |= map(select(.email != \"$user\")) else . end)' $XRAY_CONF > /tmp/xray.json && mv /tmp/xray.json $XRAY_CONF && cp /etc/xray/config.json /usr/local/etc/xray/config.json && systemctl restart xray" | at now + $minutes minutes 2>/dev/null
         
-        v_tls="vmess://${uuid}@${HOST}:443?encryption=none&security=tls&type=ws&path=%2Fvmess&sni=${HOST}#${user}-Timed"
-        v_upg="vmess://${uuid}@${HOST}:443?encryption=none&security=none&type=ws&path=%2Fvmess#${user}-Upgrade"
-        v_notls="vmess://${uuid}@${HOST}:80?encryption=none&security=none&type=ws&path=%2Fvmess#${user}-NoTLS"
+        json_tls='{"v":"2","ps":"'${user}'-Timed","add":"'${HOST}'","port":"443","id":"'${uuid}'","aid":"0","scy":"auto","net":"ws","type":"none","host":"'${HOST}'","path":"/vmess","tls":"tls","sni":"'${HOST}'","alpn":""}'
+        v_tls="vmess://$(echo -n "$json_tls" | base64 -w 0)"
+        
+        json_upg='{"v":"2","ps":"'${user}'-Upgrade","add":"'${HOST}'","port":"443","id":"'${uuid}'","aid":"0","scy":"auto","net":"ws","type":"none","host":"'${HOST}'","path":"/vmess","tls":"","sni":"","alpn":""}'
+        v_upg="vmess://$(echo -n "$json_upg" | base64 -w 0)"
+        
+        json_notls='{"v":"2","ps":"'${user}'-NoTLS","add":"'${HOST}'","port":"80","id":"'${uuid}'","aid":"0","scy":"auto","net":"ws","type":"none","host":"'${HOST}'","path":"/vmess","tls":"","sni":"","alpn":""}'
+        v_notls="vmess://$(echo -n "$json_notls" | base64 -w 0)"
         
         clear
         echo -e "${C}Time Reboot VPS     = Not Set${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
-        echo -e "           ${Y}SMARTKING4LUV VPN MANAGER${NC}"
+        echo -e "           ${M}SMARTKING4LUV VPN MANAGER${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
         echo -e "${C}Use Core      :${G} Xray-Core 2023${NC}"
         echo -e "${C}IP-VPS        :${G} $MYIP${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
-        echo -e "        ${Y}THANKS FOR USING SMARTKING4LUV AUTOSCRIPT${NC}"
+        echo -e "        ${M}THANKS FOR USING SMARTKING4LUV AUTOSCRIPT${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
-        echo -e "               ${Y}PREMIUM TIMED VMESS ACCOUNT${NC}"
+        echo -e "               ${M}PREMIUM TIMED VMESS ACCOUNT${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
         echo -e "${C}Remarks       :${G} $user${NC}"
         echo -e "${C}Domain        :${G} $HOST${NC}"
@@ -190,11 +196,10 @@ case $option in
     4|04)
         clear
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
-        echo -e "                  ${Y}RENEW VMESS USER${NC}"
+        echo -e "                  ${M}RENEW VMESS USER${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
         echo -e "${C}NO   USER            EXPIRES${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
-        
         i=1
         declare -A user_map
         while IFS=':' read -r proto user uuid exp; do
@@ -203,11 +208,9 @@ case $option in
             printf "${G}%-4s ${C}%-15s ${G}%s${NC}\n" "$i." "$user" "$exp"
             ((i++))
         done < "$DB_DIR/users.db"
-        
         echo -e "${C}0.   Back to Menu${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
         read -p " Select Number or Username : " choice
-        
         if [[ "$choice" == "0" ]]; then
             /root/my-ssh-manager/vmess-manager.sh
             exit 0
@@ -216,18 +219,15 @@ case $option in
         else
             username="$choice"
         fi
-        
         if grep -qw "^vmess:$username" "$DB_DIR/users.db"; then
             read -p " Additional Days : " days
             [[ -z "$days" ]] && days=30
             current_exp=$(grep "^vmess:$username" "$DB_DIR/users.db" | awk -F: '{print $4}')
-            
             base_date=$(date +%s)
             if [[ "$current_exp" > "$(date +%Y-%m-%d)" ]]; then
                 base_date=$(date -d "$current_exp" +%s)
             fi
             new_exp=$(TZ="Africa/Lagos" date -d "@$base_date +$days days" +"%Y-%m-%d")
-            
             sed -i "s/^vmess:$username:.*/vmess:$username:$(grep "^vmess:$username" "$DB_DIR/users.db" | awk -F: '{print $3}'):$new_exp/" "$DB_DIR/users.db"
             echo -e "\n${G}[+] VMESS account '$username' successfully renewed until $new_exp.${NC}"
         else
@@ -237,11 +237,10 @@ case $option in
     5|05)
         clear
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
-        echo -e "                ${Y}DELETE VMESS ACCOUNT${NC}"
+        echo -e "                ${M}DELETE VMESS ACCOUNT${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
         echo -e "${C}NO   USER            EXPIRES${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
-        
         i=1
         declare -A user_map
         while IFS=':' read -r proto user uuid exp; do
@@ -250,11 +249,9 @@ case $option in
             printf "${G}%-4s ${C}%-15s ${G}%s${NC}\n" "$i." "$user" "$exp"
             ((i++))
         done < "$DB_DIR/users.db"
-        
         echo -e "${C}0.   Back to Menu${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
         read -p " Select Number or Username : " choice
-        
         if [[ "$choice" == "0" ]]; then
             /root/my-ssh-manager/vmess-manager.sh
             exit 0
@@ -263,7 +260,6 @@ case $option in
         else
             username="$choice"
         fi
-        
         jq '.inbounds |= map(if .protocol == "vmess" then .settings.clients |= map(select(.email != "'$username'")) else . end)' $XRAY_CONF > /tmp/xray.json && mv /tmp/xray.json $XRAY_CONF
         cp /etc/xray/config.json /usr/local/etc/xray/config.json
         systemctl restart xray
@@ -273,7 +269,7 @@ case $option in
     6|06)
         clear
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
-        echo -e "                 ${Y}VMESS USER ACTIVITY${NC}"
+        echo -e "                 ${M}VMESS USER ACTIVITY${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
         echo -e "${C}TIME      IP ADDRESS          USER${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
@@ -288,11 +284,10 @@ case $option in
     7|07)
         clear
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
-        echo -e "                   ${Y}VMESS USER LIST${NC}"
+        echo -e "                   ${M}VMESS USER LIST${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
         echo -e "${C}USERNAME         EXP DATE        STATUS${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
-        
         curr_epoch=$(date +%s)
         while IFS=':' read -r proto user uuid exp; do
             [ -z "$user" ] && continue
@@ -309,10 +304,9 @@ case $option in
     8|08)
         clear
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
-        echo -e "               ${Y}CLEAN EXPIRED USERS${NC}"
+        echo -e "               ${M}CLEAN EXPIRED USERS${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
         echo -e "${G}Cleaning expired accounts...${NC}"
-        
         curr_epoch=$(date +%s)
         cleaned=0
         while IFS=':' read -r proto user uuid exp; do
@@ -326,7 +320,6 @@ case $option in
         done < "$DB_DIR/users.db"
         cp /etc/xray/config.json /usr/local/etc/xray/config.json
         systemctl restart xray
-        
         echo -e "${G}Cleanup Complete!${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
         ;;
@@ -338,7 +331,6 @@ case $option in
         echo -e "\n${R}[!] Invalid option.${NC}"
         ;;
 esac
-
 echo ""
 read -n 1 -s -r -p "Press any key to back on menu..."
 /root/my-ssh-manager/vmess-manager.sh
