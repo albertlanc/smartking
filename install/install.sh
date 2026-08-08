@@ -16,22 +16,27 @@ echo "$NS_DOMAIN" > /root/nsdomain.txt
 
 echo -e "  [1/5] Installing Dependencies & OpenVPN..."
 apt-get update -y >/dev/null 2>&1
-apt-get install -y curl wget unzip zip jq nginx dropbear socat python3 certbot openvpn stunnel4 screen >/dev/null 2>&1
+apt-get install -y curl wget unzip zip jq nginx dropbear socat python3 certbot openvpn stunnel4 screen git >/dev/null 2>&1
 
 echo -e "  [2/5] Validating SSL Certificate..."
 systemctl stop nginx 2>/dev/null
 certbot certonly --standalone -d "$DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email >/dev/null 2>&1
 systemctl start nginx 2>/dev/null
 
-echo -e "  [3/5] Installing SlowDNS & Generating Base64 Keys..."
+echo -e "  [3/5] Compiling SlowDNS & Generating Base64 Keys..."
 mkdir -p /etc/slowdns
-wget -qO /usr/local/bin/dnstt-server "https://raw.githubusercontent.com/FighterTunnel/tunnel/main/bin/dnstt-server" 2>/dev/null
-chmod +x /usr/local/bin/dnstt-server 2>/dev/null
+# Compiling DNSTT directly from official source repository using Go
+wget -qO go.tar.gz https://go.dev/dl/go1.21.1.linux-amd64.tar.gz
+tar -C /usr/local -xzf go.tar.gz
+export PATH=$PATH:/usr/local/go/bin
+git clone https://www.bamsoftware.com/git/dnstt.git /tmp/dnstt >/dev/null 2>&1
+cd /tmp/dnstt/dnstt-server
+go build >/dev/null 2>&1
+mv dnstt-server /usr/local/bin/
+cd - >/dev/null
+rm -rf /tmp/dnstt go.tar.gz /usr/local/go
 
-# Generate SlowDNS Public and Private Keypair
-if [ -x "/usr/local/bin/dnstt-server" ]; then
-    /usr/local/bin/dnstt-server -gen-key -privkey-file /etc/slowdns/server.key -pubkey-file /etc/slowdns/server.pub >/dev/null 2>&1
-fi
+/usr/local/bin/dnstt-server -gen-key -privkey-file /etc/slowdns/server.key -pubkey-file /etc/slowdns/server.pub >/dev/null 2>&1
 
 echo -e "  [4/5] Configuring Protocol Services..."
 sed -i 's/NO_START=1/NO_START=0/g' /etc/default/dropbear 2>/dev/null
