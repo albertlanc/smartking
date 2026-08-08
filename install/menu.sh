@@ -9,7 +9,7 @@ NC='\e[0m'     # No Color
 # ==========================================
 SERVER_IP=$(curl -sS ipv4.icanhazip.com || hostname -I | awk '{print $1}')
 MASTER_IP="104.105.205.88" # Developer IP
-WHITELIST_URL="https://raw.githubusercontent.com/albertlanc/smartking/main/whitelist.txt"
+WHITELIST_URL="https://raw.githubusercontent.com/albertlanc/smartking/main/install/whitelist.txt"
 
 if [ "$SERVER_IP" != "$MASTER_IP" ]; then
     VALID_IP=$(curl -sS "$WHITELIST_URL" 2>/dev/null | grep -w "$SERVER_IP")
