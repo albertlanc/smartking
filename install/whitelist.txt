@@ -1,2 +1,3 @@
 174.138.0.41
+66.175.223.93
 # Add new client IPs below this line. One IP per line.
