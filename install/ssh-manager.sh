@@ -8,7 +8,7 @@ R='\e[1;31m'   # Red (Warnings/Expired)
 NC='\e[0m'     # No Color
 
 NS_DOMAIN=$(cat /etc/slowdns/nsdomain 2>/dev/null || echo "$(cat /root/nsdomain.txt)")
-PUB_KEY=$(cat /etc/slowdns/server.pub 2>/dev/null || echo "$(cat /root/nsdomain.txt)")
+PUB_KEY=$(cat /etc/slowdns/server.pub 2>/dev/null || echo "Not Configured")
 LIMIT_DIR="/etc/smartking/limits"
 mkdir -p "$LIMIT_DIR"
 HOST="$(cat /root/domain.txt)"
