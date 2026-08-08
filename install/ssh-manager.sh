@@ -1,4 +1,5 @@
 #!/bin/bash
+PUB_KEY=$(cat /etc/slowdns/server.pub 2>/dev/null || echo "Not Configured")
 Y='\e[1;33m'   # Yellow/Gold (Headers)
 B='\e[38;5;24m' # Deep Blue (Lines)
 C='\e[0;36m'   # Cyan (Brackets & Labels)
