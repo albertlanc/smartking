@@ -10,10 +10,10 @@ clear
 
 # Fetch current domain & NS. Fallback to default if not set yet.
 domain=$(cat /etc/xray/domain 2>/dev/null)
-if [ -z "$domain" ]; then domain="xe.gregsmarty.co.uk"; fi
+if [ -z "$domain" ]; then domain="$(cat /root/domain.txt 2>/dev/null || echo "Not Configured")"; fi
 
 nsdomain=$(cat /etc/slowdns/nsdomain 2>/dev/null)
-if [ -z "$nsdomain" ]; then nsdomain="ns-xe.gregsmarty.co.uk"; fi
+if [ -z "$nsdomain" ]; then nsdomain="$(cat /root/nsdomain.txt 2>/dev/null || echo "Not Configured")"; fi
 
 echo -e "${B}────────────────────────────────────────────────────────${NC}"
 echo -e "                 ${Y}DOMAIN & SSL MANAGER${NC}"

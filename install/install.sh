@@ -14,36 +14,26 @@ read -p " Enter NameServer (e.g. ns.example.com) : " NS_DOMAIN
 echo "$DOMAIN" > /root/domain.txt
 echo "$NS_DOMAIN" > /root/nsdomain.txt
 
-echo -e "  ${WHITE}[1/6] Installing Dependencies & OpenVPN...${NC}"
+echo -e "  [1/5] Installing Dependencies & OpenVPN..."
 apt-get update -y >/dev/null 2>&1
-apt-get install -y curl wget unzip zip jq nginx dropbear socat python3 certbot openvpn stunnel4 cmake screen >/dev/null 2>&1
+apt-get install -y curl wget unzip zip jq nginx dropbear socat python3 certbot openvpn stunnel4 screen >/dev/null 2>&1
 
-echo -e "  ${WHITE}[2/6] Validating SSL Certificate...${NC}"
+echo -e "  [2/5] Validating SSL Certificate..."
 systemctl stop nginx 2>/dev/null
 certbot certonly --standalone -d "$DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email >/dev/null 2>&1
 systemctl start nginx 2>/dev/null
 
-echo -e "  ${WHITE}[3/6] Installing SlowDNS & UDP Custom (BadVPN)...${NC}"
+echo -e "  [3/5] Installing SlowDNS & Generating Base64 Keys..."
+mkdir -p /etc/slowdns
 wget -qO /usr/local/bin/dnstt-server "https://raw.githubusercontent.com/massdns/dnstt/master/dnstt-server/dnstt-server" 2>/dev/null
 chmod +x /usr/local/bin/dnstt-server 2>/dev/null
 
-wget -qO /usr/bin/badvpn-udpgw "https://raw.githubusercontent.com/daybreakersx/badvpn/master/badvpn-udpgw" 2>/dev/null
-chmod +x /usr/bin/badvpn-udpgw 2>/dev/null
+# Generate SlowDNS Public and Private Keypair
+if [ -x "/usr/local/bin/dnstt-server" ]; then
+    /usr/local/bin/dnstt-server -gen-key -privkey-file /etc/slowdns/server.key -pubkey-file /etc/slowdns/server.pub >/dev/null 2>&1
+fi
 
-cat << 'UDP_EOF' > /etc/systemd/system/badvpn.service
-[Unit]
-Description=BadVPN UDPGW
-After=network.target
-[Service]
-ExecStart=/usr/bin/badvpn-udpgw --listen-addr 127.0.0.1:7300 --max-clients 1000 --max-connections-for-client 10
-Restart=always
-[Install]
-WantedBy=multi-user.target
-UDP_EOF
-systemctl enable badvpn >/dev/null 2>&1
-systemctl start badvpn >/dev/null 2>&1
-
-echo -e "  ${WHITE}[4/6] Configuring Protocol Services...${NC}"
+echo -e "  [4/5] Configuring Protocol Services..."
 sed -i 's/NO_START=1/NO_START=0/g' /etc/default/dropbear 2>/dev/null
 systemctl enable dropbear >/dev/null 2>&1
 systemctl restart dropbear >/dev/null 2>&1
@@ -52,6 +42,7 @@ bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release
 systemctl enable xray >/dev/null 2>&1
 systemctl start xray >/dev/null 2>&1
 
+# Persistent Python WebSocket server
 cat << 'PY_EOF' > /usr/local/bin/ssh-ws
 import socket, threading
 def handle_client(client_socket):
@@ -96,12 +87,11 @@ systemctl daemon-reload >/dev/null 2>&1
 systemctl enable ssh-ws >/dev/null 2>&1
 systemctl start ssh-ws >/dev/null 2>&1
 
-echo -e "  ${WHITE}[5/6] Organizing System Files...${NC}"
+echo -e "  [5/5] Organizing System Files..."
 mkdir -p /root/my-ssh-manager
 cp -f *.sh /root/my-ssh-manager/ 2>/dev/null
 chmod +x /root/my-ssh-manager/*.sh 2>/dev/null
 
-echo -e "  ${WHITE}[6/6] Finalizing Menu Shortcut...${NC}"
 cp -f menu.sh /usr/local/bin/menu
 chmod +x /usr/local/bin/menu
 
