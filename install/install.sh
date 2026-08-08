@@ -25,7 +25,7 @@ systemctl start nginx 2>/dev/null
 
 echo -e "  [3/5] Installing SlowDNS & Generating Base64 Keys..."
 mkdir -p /etc/slowdns
-wget -qO /usr/local/bin/dnstt-server "https://raw.githubusercontent.com/massdns/dnstt/master/dnstt-server/dnstt-server" 2>/dev/null
+wget -qO /usr/local/bin/dnstt-server "https://raw.githubusercontent.com/FighterTunnel/tunnel/main/bin/dnstt-server" 2>/dev/null
 chmod +x /usr/local/bin/dnstt-server 2>/dev/null
 
 # Generate SlowDNS Public and Private Keypair
