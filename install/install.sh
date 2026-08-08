@@ -1,17 +1,16 @@
 #!/bin/bash
 BLUE='\e[1;34m'
-WHITE='\e[1;37m'
 NC='\e[0m'
 
 echo -e "${BLUE}──────────────────────────────────────────────${NC}"
 echo -e "${BLUE}     SMARTKING4LUV ™ VPN MANAGER SETUP        ${NC}"
 echo -e "${BLUE}──────────────────────────────────────────────${NC}"
 
-echo -e "  ${WHITE}[1/5] Installing System Dependencies...${NC}"
+echo -e "  [1/5] Installing System Dependencies..."
 apt-get update -y >/dev/null 2>&1
 apt-get install -y curl wget unzip zip jq nginx dropbear socat python3 >/dev/null 2>&1
 
-echo -e "  ${WHITE}[2/5] Configuring Protocol Services...${NC}"
+echo -e "  [2/5] Configuring Protocol Services..."
 sed -i 's/NO_START=1/NO_START=0/g' /etc/default/dropbear 2>/dev/null
 systemctl enable dropbear >/dev/null 2>&1
 systemctl restart dropbear >/dev/null 2>&1
@@ -20,6 +19,41 @@ bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release
 systemctl enable xray >/dev/null 2>&1
 systemctl start xray >/dev/null 2>&1
 
+# Persistent Python WebSocket server
+cat << 'PY_EOF' > /usr/local/bin/ssh-ws
+import socket, threading
+
+def handle_client(client_socket):
+    try:
+        target = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        target.connect(('127.0.0.1', 22))
+        
+        def forward(src, dst):
+            try:
+                while True:
+                    data = src.recv(4096)
+                    if not data: break
+                    dst.sendall(data)
+            except: pass
+
+        t1 = threading.Thread(target=forward, args=(client_socket, target))
+        t2 = threading.Thread(target=forward, args=(target, client_socket))
+        t1.start(); t2.start()
+    except:
+        client_socket.close()
+
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+server.bind(('0.0.0.0', 2082))
+server.listen(100)
+
+while True:
+    client, addr = server.accept()
+    threading.Thread(target=handle_client, args=(client,)).start()
+PY_EOF
+
+chmod +x /usr/local/bin/ssh-ws
+
 cat << 'WS_EOF' > /etc/systemd/system/ssh-ws.service
 [Unit]
 Description=SSH WebSocket Proxy
@@ -27,7 +61,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 -c "import socket; s=socket.socket(); s.bind(('0.0.0.0', 2082)); s.listen(100)"
+ExecStart=/usr/bin/python3 /usr/local/bin/ssh-ws
 Restart=always
 
 [Install]
@@ -39,21 +73,21 @@ systemctl enable ssh-ws >/dev/null 2>&1
 systemctl start ssh-ws >/dev/null 2>&1
 systemctl restart nginx >/dev/null 2>&1
 
-echo -e "  ${WHITE}[3/5] Applying BBR Speed Optimizations...${NC}"
+echo -e "  [3/5] Applying BBR Speed Optimizations..."
 if [ -f "bbr-setup.sh" ]; then
     chmod +x bbr-setup.sh
     ./bbr-setup.sh >/dev/null 2>&1
 fi
 
-echo -e "  ${WHITE}[4/5] Organizing System Files...${NC}"
+echo -e "  [4/5] Organizing System Files..."
 mkdir -p /root/my-ssh-manager
 cp -f *.sh /root/my-ssh-manager/ 2>/dev/null
 chmod +x /root/my-ssh-manager/*.sh 2>/dev/null
 
-echo -e "  ${WHITE}[5/5] Finalizing Menu Shortcut...${NC}"
+echo -e "  [5/5] Finalizing Menu Shortcut..."
 cp -f menu.sh /usr/local/bin/menu
 chmod +x /usr/local/bin/menu
 
 echo -e "\n  ${BLUE}Installation Complete!${NC}"
-echo -e "  Type ${WHITE}menu${NC} to launch your dashboard.\n"
+echo -e "  Type menu to launch your dashboard.\n"
 echo -e "${BLUE}──────────────────────────────────────────────${NC}"
