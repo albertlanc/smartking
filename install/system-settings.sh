@@ -303,7 +303,7 @@ except Exception as e:
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
         echo -e ""
         echo -e " ${C}[1]${G} Switch to Global Key ${C}(Compatible with all scripts)${NC}"
-        echo -e " ${C}[2]${G} Switch to TechSavage Default Key${NC}"
+        echo -e " ${C}[2]${G} Switch to SmartKing Default Key${NC}"
         echo -e " ${C}[3]${G} Generate Random Custom Key${NC}"
         echo -e " ${C}[0]${G} Back to Settings Menu${NC}"
         echo -e "${B}────────────────────────────────────────────────────────${NC}"
@@ -312,7 +312,7 @@ except Exception as e:
         
         case $dns_opt in
             1) echo -e "\n${G}[+] Switched to Global Key.${NC}"; sleep 2;;
-            2) echo -e "\n${G}[+] Switched to TechSavage Default Key.${NC}"; sleep 2;;
+            2) echo -e "\n${G}[+] Switched to SmartKing Default Key.${NC}"; sleep 2;;
             3)
                 mkdir -p /root/slowdns
                 NEW_KEY=$(cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 64 | head -n 1)
