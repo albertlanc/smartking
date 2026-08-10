@@ -1,76 +1,95 @@
 #!/bin/bash
-BLUE='\e[1;34m'
-MAGENTA='\e[1;35m'
-GREEN='\e[1;32m'
-RED='\e[1;31m'
+CYAN='\e[1;36m'
+W='\e[1;37m'
+R='\e[1;31m'
 NC='\e[0m'
 
-MY_IP=$(curl -s https://api.ipify.org || curl -s https://ipv4.icanhazip.com)
-WHITELIST_URL="https://raw.githubusercontent.com/albertlanc/smartking/main/install/whitelist.txt?v=$(date +%s)"
+SERVER_IP=$(curl -sS --max-time 3 ipv4.icanhazip.com || hostname -I | awk '{print $1}')
+MASTER_IP="104.105.205.88"
+WHITELIST_URL="https://raw.githubusercontent.com/albertlanc/smartking/main/whitelist.txt"
 
-if ! curl -s "$WHITELIST_URL" | grep -q "$MY_IP"; then
-    echo -e "\n${RED}  [!] ACCESS DENIED: UNLICENSED SERVER${NC}"
-    echo -e "  Your Server IP : ${GREEN}$MY_IP${NC} is not registered."
-    exit 1
+if [ "$SERVER_IP" != "$MASTER_IP" ]; then
+    # Added a 5-second timeout so the server doesn't freeze if GitHub is unreachable
+    VALID_IP=$(curl -sS --max-time 5 "$WHITELIST_URL" 2>/dev/null | grep -w "$SERVER_IP")
+    if [ -z "$VALID_IP" ]; then
+        clear
+        echo -e "${CYAN}────────────────────────────────────────────────────────${NC}"
+        echo -e "          ${R}[!] ACCESS DENIED: UNLICENSED SERVER${NC}          "
+        echo -e "${CYAN}────────────────────────────────────────────────────────${NC}"
+        echo -e "\n  ${W}Your Server IP :${NC} ${CYAN}$SERVER_IP${NC} is not registered."
+        echo -e "  ${W}Please contact the developer to purchase a license.${NC}"
+        echo -e "  ${W}Telegram       :${NC} ${CYAN}T.me/SmartKing4Luv${NC}\n"
+        echo -e "${CYAN}────────────────────────────────────────────────────────${NC}"
+        exit 1
+    fi
 fi
 
-check_service() {
-    if systemctl is-active --quiet "$1" 2>/dev/null; then
-        printf "${GREEN}● ONLINE ${NC}"
+chk_svc() {
+    if systemctl is-active --quiet $1 2>/dev/null; then
+        echo -e "${W}ON ${NC}"
     else
-        printf "${RED}● OFFLINE${NC}"
+        echo -e "${W}OFF${NC}"
     fi
 }
 
-OS_VER=$(lsb_release -ds 2>/dev/null || cat /etc/issue | head -n1)
-DATE_NOW=$(date +"%Y-%m-%d %H:%M:%S")
-ONLINE_USERS=$(who | wc -l)
+# Helper function to safely execute sub-menus
+run_script() {
+    local script_path="/root/my-ssh-manager/$1"
+    if [ -f "$script_path" ]; then
+        bash "$script_path"
+    else
+        clear
+        echo -e "${R}[!] Error: Module '$1' is missing or deleted.${NC}"
+        sleep 2
+    fi
+}
 
-clear
-echo -e "  ${BLUE}SMARTKING4LUV ™ System Information${NC}"
-echo -e "${BLUE}──────────────────────────────────────────────────────────────${NC}"
-echo -e "  ${MAGENTA}OS      :${NC} $OS_VER"
-echo -e "  ${MAGENTA}IP      :${NC} $MY_IP"
-echo -e "  ${MAGENTA}Time    :${NC} $DATE_NOW"
-echo -e "  ${MAGENTA}Users   :${NC} $ONLINE_USERS Online"
-echo -e "  ${MAGENTA}Dev     :${NC} T.me/SmartKing4Luv"
-echo -e "${BLUE}──────────────────────────────────────────────────────────────${NC}"
-echo -e ""
-echo -e "${BLUE}┌────────────────────────────────────────────────────────────┐${NC}"
-echo -e "${BLUE}│${NC}                      ${BLUE}SERVICES MATRIX${NC}                       ${BLUE}│${NC}"
-echo -e "${BLUE}├────────────────────────────────────────────────────────────┤${NC}"
-echo -e "${BLUE}│${NC}  ${MAGENTA}SSH Service${NC}   : $(check_service ssh)                               ${BLUE}│${NC}"
-echo -e "${BLUE}│${NC}  ${MAGENTA}NGINX Proxy${NC}   : $(check_service nginx)                               ${BLUE}│${NC}"
-echo -e "${BLUE}│${NC}  ${MAGENTA}XRAY Core${NC}     : $(check_service xray)                               ${BLUE}│${NC}"
-echo -e "${BLUE}│${NC}  ${MAGENTA}Dropbear${NC}      : $(check_service dropbear)                               ${BLUE}│${NC}"
-echo -e "${BLUE}│${NC}  ${MAGENTA}SSH-WS Proxy${NC}  : $(check_service ssh-ws)                               ${BLUE}│${NC}"
-echo -e "${BLUE}└────────────────────────────────────────────────────────────┘${NC}"
-echo -e ""
-echo -e "${BLUE}┌────────────────────────────────────────────────────────────┐${NC}"
-echo -e "${BLUE}│${NC}                         ${BLUE}MAIN MENU${NC}                          ${BLUE}│${NC}"
-echo -e "${BLUE}├────────────────────────────────────────────────────────────┤${NC}"
-echo -e "${BLUE}│${NC}  [ ${BLUE}1${NC} ]  SSH & OpenVPN Manager                               ${BLUE}│${NC}"
-echo -e "${BLUE}│${NC}  [ ${BLUE}2${NC} ]  VMess Manager                                       ${BLUE}│${NC}"
-echo -e "${BLUE}│${NC}  [ ${BLUE}3${NC} ]  VLESS Manager                                       ${BLUE}│${NC}"
-echo -e "${BLUE}│${NC}  [ ${BLUE}4${NC} ]  Trojan Manager                                      ${BLUE}│${NC}"
-echo -e "${BLUE}│${NC}  [ ${BLUE}5${NC} ]  Domain & SSL Manager                                ${BLUE}│${NC}"
-echo -e "${BLUE}│${NC}  [ ${BLUE}6${NC} ]  HTTP Proxy Status (Port 8080)                       ${BLUE}│${NC}"
-echo -e "${BLUE}│${NC}  [ ${BLUE}7${NC} ]  System Settings & Auto-Reboot                       ${BLUE}│${NC}"
-echo -e "${BLUE}│${NC}  [ ${BLUE}8${NC} ]  System Backup Manager                               ${BLUE}│${NC}"
-echo -e "${BLUE}│${NC}  [ ${BLUE}9${NC} ]  Exit Manager                                        ${BLUE}│${NC}"
-echo -e "${BLUE}└────────────────────────────────────────────────────────────┘${NC}"
-echo -e ""
-read -p "Select an Option [ 1 - 9 ] : " option
-
-case $option in
-    1) bash /root/my-ssh-manager/ssh-manager.sh ;;
-    2) bash /root/my-ssh-manager/vmess-manager.sh ;;
-    3) bash /root/my-ssh-manager/vless-manager.sh ;;
-    4) bash /root/my-ssh-manager/trojan-manager.sh ;;
-    5) bash /root/my-ssh-manager/domain-ssl.sh ;;
-    6) bash /root/my-ssh-manager/proxy-status.sh ;;
-    7) bash /root/my-ssh-manager/system-settings.sh ;;
-    8) bash /root/my-ssh-manager/backup-manager.sh ;;
-    9) clear; exit 0 ;;
-    *) echo -e "${RED}Invalid option!${NC}"; sleep 1; menu ;;
-esac
+while true; do
+    clear
+    OS_VER=$(grep -E '^(PRETTY_NAME)=' /etc/os-release | cut -d'"' -f2)
+    GEO_INFO=$(curl -sS --max-time 3 "http://ip-api.com/json/$SERVER_IP" 2>/dev/null)
+    
+    if echo "$GEO_INFO" | grep -q "success"; then
+        CITY=$(echo "$GEO_INFO" | grep -o '"city":"[^"]*"' | cut -d'"' -f4)
+        COUNTRY=$(echo "$GEO_INFO" | grep -o '"country":"[^"]*"' | cut -d'"' -f4)
+        LOC_STR="$CITY, $COUNTRY"
+    else
+        LOC_STR="Unknown Location"
+    fi
+    
+    CUR_DATE=$(date "+%Y-%m-%d")
+    CUR_TIME=$(date "+%H:%M:%S")
+    ACTIVE_USERS=$(who | awk '{print $1}' | sort -u | wc -l | tr -d '[:space:]')
+    
+    echo -e "${CYAN}┌──────────────────────────────────────────────────────┐${NC}"
+    echo -e "${CYAN}│${NC}                      ${CYAN}MAIN MENU${NC}                      ${CYAN}│${NC}"
+    echo -e "${CYAN}└──────────────────────────────────────────────────────┘${NC}"
+    echo -e ""
+    echo -e "${CYAN}┌──────────────────────────────────────────────────────┐${NC}"
+    echo -e "${CYAN}│${NC}  ${CYAN}1${NC}  ${CYAN}│${NC}  ${W}SSH & OpenVPN Manager${NC}"
+    echo -e "${CYAN}│${NC}  ${CYAN}2${NC}  ${CYAN}│${NC}  ${W}VMess Manager${NC}"
+    echo -e "${CYAN}│${NC}  ${CYAN}3${NC}  ${CYAN}│${NC}  ${W}VLESS Manager${NC}"
+    echo -e "${CYAN}│${NC}  ${CYAN}4${NC}  ${CYAN}│${NC}  ${W}Trojan Manager${NC}"
+    echo -e "${CYAN}│${NC}  ${CYAN}5${NC}  ${CYAN}│${NC}  ${W}Domain & SSL Manager${NC}"
+    echo -e "${CYAN}│${NC}  ${CYAN}6${NC}  ${CYAN}│${NC}  ${W}HTTP Proxy Status (Port 8080)${NC}"
+    echo -e "${CYAN}│${NC}  ${CYAN}7${NC}  ${CYAN}│${NC}  ${W}System Settings & Auto-Reboot${NC}"
+    echo -e "${CYAN}│${NC}  ${CYAN}8${NC}  ${CYAN}│${NC}  ${W}System Backup Manager${NC}"
+    echo -e "${CYAN}│${NC}  ${CYAN}9${NC}  ${CYAN}│${NC}  ${W}Exit Manager${NC}"
+    echo -e "${CYAN}└──────────────────────────────────────────────────────┘${NC}"
+    echo -e ""
+    echo -ne "${CYAN}Select an option : ${NC}"
+    read option
+    
+    case $option in
+        1|01) run_script "ssh-manager.sh" ;;
+        2|02) run_script "xray-manager.sh" ;;
+        3|03) run_script "vless-manager.sh" ;;
+        4|04) run_script "trojan-manager.sh" ;;
+        5|05) run_script "domain-ssl.sh" ;;
+        6|06) run_script "http-proxy.sh" ;;
+        7|07) run_script "system-settings.sh" ;;
+        8|08) run_script "backup-manager.sh" ;;
+        9|09) clear; exit 0 ;;
+        *) echo -e "\n${R}[!] Invalid option selected.${NC}"; sleep 1 ;;
+    esac
+done
