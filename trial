@@ -1,0 +1,64 @@
+#!/bin/bash
+clear
+DOMAIN=$(cat /etc/xray/domain 2>/dev/null || echo "lance.gregsmarty.co.uk")
+NS_DOMAIN=$(cat /etc/xray/nsdomain 2>/dev/null || echo "ns-$DOMAIN")
+PUBKEY=$(cat /etc/slowdns/server.pub 2>/dev/null || echo "Not Configured")
+IP=$(curl -s ifconfig.me || hostname -I | awk '{print $1}')
+
+echo -e "\e[1;33m              CREATE TRIAL ACCOUNT                \e[0m"
+echo -e "\e[1;34m──────────────────────────────────────────────────\e[0m"
+read -p "Max Login (Default 1): " max_login
+: ${max_login:=1}
+
+user="trial$(tr -dc 'a-z0-9' </dev/urandom | head -c 4)"
+pass="pass$(tr -dc '0-9' </dev/urandom | head -c 4)"
+expdays=1
+exp=$(date -d "+$expdays days" +"%b %d, %Y" 2>/dev/null || echo "Tomorrow")
+exp_date=$(date -d "+$expdays days" +"%Y-%m-%d" 2>/dev/null || echo "")
+
+useradd -e "$exp_date" -M -s /bin/false "$user" &>/dev/null
+echo "$user:$pass" | chpasswd &>/dev/null
+
+clear
+echo -e "\e[1;34m──────────────────────────────────────────────────\e[0m"
+echo -e "\e[1;32m             PREMIUM TRIAL ACCOUNT                \e[0m"
+echo -e "\e[1;34m──────────────────────────────────────────────────\e[0m"
+echo -e "Username       : $user"
+echo -e "Password       : $pass"
+echo -e "Max Login      : $max_login Connection(s)"
+echo -e "Expired On     : $exp"
+echo -e "\e[1;34m──────────────────────────────────────────────────\e[0m"
+echo -e "\e[1;33m               SERVER INFORMATION                 \e[0m"
+echo -e "\e[1;34m──────────────────────────────────────────────────\e[0m"
+echo -e "IP             : $IP"
+echo -e "Host           : $DOMAIN"
+echo -e "Nameserver     : $NS_DOMAIN"
+echo -e "PubKey         : $PUBKEY"
+echo -e "OpenSSH        : 22"
+echo -e "SSH-WS         : 80"
+echo -e "Custom SSH     : 8880"
+echo -e "SSH-SSL-WS     : 443"
+echo -e "Dropbear       : 109, 143"
+echo -e "SSL/TLS        : 443, 444"
+echo -e "UDPGW          : 7100-7300"
+echo -e "SOCKS5         : 1080"
+echo -e "OVPN TCP       : http://$DOMAIN:85/client-tcp.ovpn"
+echo -e "OVPN UDP       : http://$DOMAIN:85/client-udp.ovpn"
+echo -e "\e[1;34m──────────────────────────────────────────────────\e[0m"
+echo -e "SSH-80         : $DOMAIN:80@$user:$pass"
+echo -e "SSH-8880       : $DOMAIN:8880@$user:$pass"
+echo -e "SSH-443        : $DOMAIN:443@$user:$pass"
+echo -e "SOCKS5         : $DOMAIN:1080@$user:$pass"
+echo -e "HTTP Proxy     : $DOMAIN:8080@$user:$pass"
+echo -e "\e[1;34m──────────────────────────────────────────────────\e[0m"
+echo -e "\e[1;36m(Payload WSS)\e[0m"
+echo -e "GET wss://bug.com [protocol][crlf]Host: $DOMAIN[crlf]Upgrade: websocket[crlf][crlf]"
+echo -e ""
+echo -e "\e[1;36m(Payload WS - Port 80)\e[0m"
+echo -e "GET / HTTP/1.1[crlf]Host: $DOMAIN[crlf]Upgrade: websocket[crlf][crlf]"
+echo -e ""
+echo -e "\e[1;36m(Payload Custom Bypass - Port 8880)\e[0m"
+echo -e "GET http://$DOMAIN:8880 HTTP/1.1[crlf]Host: [ISP_BUG_HOST][crlf]Upgrade: websocket[crlf]Connection: Upgrade[crlf][crlf]"
+echo -e "\e[1;34m──────────────────────────────────────────────────\e[0m"
+echo -ne "\e[1;32mPress any key to back on menu...\e[0m"
+read -n 1 -s

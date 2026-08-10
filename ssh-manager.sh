@@ -18,7 +18,7 @@ NS_DOMAIN=$(cat /etc/slowdns/nsdomain 2>/dev/null || echo "Not Configured")
 PUB_KEY=$(cat /etc/slowdns/server.pub 2>/dev/null || echo "Not Configured")
 LIMIT_DIR="/etc/smartking/limits"
 mkdir -p "$LIMIT_DIR"
-HOST="te.gregsmarty.co.uk"
+HOST="lance.gregsmarty.co.uk"
 
 while true; do
     clear

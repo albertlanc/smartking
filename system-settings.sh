@@ -6,7 +6,7 @@ G='\e[1;32m'
 R='\e[1;31m'   
 NC='\e[0m'     
 
-HOST="te.gregsmarty.co.uk"
+HOST="lance.gregsmarty.co.uk"
 
 while true; do
     clear

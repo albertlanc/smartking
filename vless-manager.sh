@@ -11,7 +11,7 @@ XRAY_CONF="/etc/xray/config.json"
 DB_DIR="/etc/smartking/vless"
 mkdir -p "$DB_DIR"
 touch "$DB_DIR/users.db"
-HOST="te.gregsmarty.co.uk"
+HOST="lance.gregsmarty.co.uk"
 
 # Self-Healing Dependency Check
 for pkg in jq at; do
