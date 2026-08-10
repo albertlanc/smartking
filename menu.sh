@@ -1,3 +1,4 @@
+
 #!/bin/bash
 CYAN='\e[1;36m'
 W='\e[1;37m'
@@ -46,6 +47,20 @@ run_script() {
 
 while true; do
     clear
+    DOMAIN=$(cat /etc/xray/domain 2>/dev/null || echo "No Domain Set")
+    NS_DOMAIN=$(cat /etc/xray/nsdomain 2>/dev/null || echo "ns-$DOMAIN")
+
+    echo -e "${CYAN}Scripted & Programged By Albert Tech Inc${NC}"
+    echo -e "${CYAN}┌──────────────────────────────────────────────────────┐${NC}"
+    echo -e "${CYAN}│${NC}                    ${CYAN}SYSTEM INFO${NC}                       ${CYAN}│${NC}"
+    echo -e "${CYAN}├──────────────────────────────────────────────────────┤${NC}"
+    echo -e "${CYAN}│${NC}  ${W}OS:          ${NC} ${OS_VER}"
+    echo -e "${CYAN}│${NC}  ${W}Domain:      ${NC} ${CYAN}$DOMAIN${NC}"
+    echo -e "${CYAN}│${NC}  ${W}Name Server: ${NC} ${CYAN}$NS_DOMAIN${NC}"
+    echo -e "${CYAN}│${NC}  ${W}Time:        ${NC} ${W}$CUR_DATE $CUR_TIME${NC}"
+    echo -e "${CYAN}│${NC}  ${W}Users:       ${NC} ${CYAN}$ACTIVE_USERS Connected${NC}"
+    echo -e "${CYAN}└──────────────────────────────────────────────────────┘${NC}"
+    echo -e ""
     OS_VER=$(grep -E '^(PRETTY_NAME)=' /etc/os-release | cut -d'"' -f2)
     GEO_INFO=$(curl -sS --max-time 3 "http://ip-api.com/json/$SERVER_IP" 2>/dev/null)
     
