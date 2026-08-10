@@ -1,4 +1,3 @@
-
 #!/bin/bash
 CYAN='\e[1;36m'
 W='\e[1;37m'
@@ -10,7 +9,6 @@ MASTER_IP="104.105.205.88"
 WHITELIST_URL="https://raw.githubusercontent.com/albertlanc/smartking/main/whitelist.txt"
 
 if [ "$SERVER_IP" != "$MASTER_IP" ]; then
-    # Added a 5-second timeout so the server doesn't freeze if GitHub is unreachable
     VALID_IP=$(curl -sS --max-time 5 "$WHITELIST_URL" 2>/dev/null | grep -w "$SERVER_IP")
     if [ -z "$VALID_IP" ]; then
         clear
@@ -25,15 +23,6 @@ if [ "$SERVER_IP" != "$MASTER_IP" ]; then
     fi
 fi
 
-chk_svc() {
-    if systemctl is-active --quiet $1 2>/dev/null; then
-        echo -e "${W}ON ${NC}"
-    else
-        echo -e "${W}OFF${NC}"
-    fi
-}
-
-# Helper function to safely execute sub-menus
 run_script() {
     local script_path="/root/my-ssh-manager/$1"
     if [ -f "$script_path" ]; then
@@ -47,8 +36,12 @@ run_script() {
 
 while true; do
     clear
+    OS_VER=$(grep -E '^(PRETTY_NAME)=' /etc/os-release | cut -d'"' -f2)
     DOMAIN=$(cat /etc/xray/domain 2>/dev/null || echo "No Domain Set")
     NS_DOMAIN=$(cat /etc/xray/nsdomain 2>/dev/null || echo "ns-$DOMAIN")
+    CUR_DATE=$(date "+%Y-%m-%d")
+    CUR_TIME=$(date "+%H:%M:%S")
+    ACTIVE_USERS=$(who | awk '{print $1}' | sort -u | wc -l | tr -d '[:space:]')
 
     echo -e "${CYAN}Scripted & Programged By Albert Tech Inc${NC}"
     echo -e "${CYAN}┌──────────────────────────────────────────────────────┐${NC}"
@@ -61,21 +54,6 @@ while true; do
     echo -e "${CYAN}│${NC}  ${W}Users:       ${NC} ${CYAN}$ACTIVE_USERS Connected${NC}"
     echo -e "${CYAN}└──────────────────────────────────────────────────────┘${NC}"
     echo -e ""
-    OS_VER=$(grep -E '^(PRETTY_NAME)=' /etc/os-release | cut -d'"' -f2)
-    GEO_INFO=$(curl -sS --max-time 3 "http://ip-api.com/json/$SERVER_IP" 2>/dev/null)
-    
-    if echo "$GEO_INFO" | grep -q "success"; then
-        CITY=$(echo "$GEO_INFO" | grep -o '"city":"[^"]*"' | cut -d'"' -f4)
-        COUNTRY=$(echo "$GEO_INFO" | grep -o '"country":"[^"]*"' | cut -d'"' -f4)
-        LOC_STR="$CITY, $COUNTRY"
-    else
-        LOC_STR="Unknown Location"
-    fi
-    
-    CUR_DATE=$(date "+%Y-%m-%d")
-    CUR_TIME=$(date "+%H:%M:%S")
-    ACTIVE_USERS=$(who | awk '{print $1}' | sort -u | wc -l | tr -d '[:space:]')
-    
     echo -e "${CYAN}┌──────────────────────────────────────────────────────┐${NC}"
     echo -e "${CYAN}│${NC}                      ${CYAN}MAIN MENU${NC}                      ${CYAN}│${NC}"
     echo -e "${CYAN}└──────────────────────────────────────────────────────┘${NC}"
