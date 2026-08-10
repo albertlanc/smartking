@@ -10,10 +10,10 @@ clear
 
 # Fetch current domain & NS. Fallback to default if not set yet.
 domain=$(cat /etc/xray/domain 2>/dev/null)
-if [ -z "$domain" ]; then domain="$(cat /root/domain.txt 2>/dev/null || echo "Not Configured")"; fi
+if [ -z "$domain" ]; then domain="xe.gregsmarty.co.uk"; fi
 
 nsdomain=$(cat /etc/slowdns/nsdomain 2>/dev/null)
-if [ -z "$nsdomain" ]; then nsdomain="$(cat /root/nsdomain.txt 2>/dev/null || echo "Not Configured")"; fi
+if [ -z "$nsdomain" ]; then nsdomain="ns-xe.gregsmarty.co.uk"; fi
 
 echo -e "${B}────────────────────────────────────────────────────────${NC}"
 echo -e "                 ${Y}DOMAIN & SSL MANAGER${NC}"
@@ -68,20 +68,31 @@ case $option in
         systemctl stop nginx 2>/dev/null
         systemctl stop xray 2>/dev/null
         
+        # Ensure Port 80 is strictly clear for acme standalone
+        fuser -k 80/tcp > /dev/null 2>&1
+        
         echo -e "${Y}Generating SSL Certificate for $domain...${NC}"
         mkdir -p /root/.acme.sh
         curl -s https://get.acme.sh | sh &>/dev/null
         /root/.acme.sh/acme.sh --upgrade --auto-upgrade &>/dev/null
         /root/.acme.sh/acme.sh --set-default-ca --server letsencrypt &>/dev/null
-        /root/.acme.sh/acme.sh --issue -d $domain --standalone -k ec-256 --force
-        /root/.acme.sh/acme.sh --installcert -d $domain --fullchainpath /etc/xray/xray.crt --keypath /etc/xray/xray.key --ecc --force
+        /root/.acme.sh/acme.sh --issue -d "$domain" --standalone -k ec-256 --force
+        /root/.acme.sh/acme.sh --installcert -d "$domain" --fullchainpath /etc/xray/xray.crt --keypath /etc/xray/xray.key --ecc --force
+        
+        # ROOT CAUSE FIX: Grant the Xray unprivileged user read access to the new certificates
+        if id "xray" &>/dev/null; then
+            chown xray:xray /etc/xray/xray.crt /etc/xray/xray.key
+        elif id "nobody" &>/dev/null; then
+            chown nobody:nogroup /etc/xray/xray.crt /etc/xray/xray.key
+        fi
+        chmod 644 /etc/xray/xray.crt /etc/xray/xray.key
         
         echo -e "\n${C}Restarting services...${NC}"
-        systemctl start nginx 2>/dev/null
+        # We do not restart nginx if it is not explicitly configured as a proxy to avoid Port 80 clashes
         systemctl start xray 2>/dev/null
         
-        if [ -f /etc/xray/xray.crt ]; then
-            echo -e "${G}[+] SSL Certificate Renewed Successfully!${NC}"
+        if [ -s /etc/xray/xray.crt ]; then
+            echo -e "${G}[+] SSL Certificate Renewed Successfully and assigned to Xray!${NC}"
         else
             echo -e "${R}[!] SSL Certificate Renewal Failed. Check if Domain is pointing to VPS IP.${NC}"
         fi
@@ -98,3 +109,4 @@ esac
 echo ""
 read -n 1 -s -r -p "Press any key to return..."
 /root/my-ssh-manager/domain-ssl.sh
+

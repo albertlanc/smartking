@@ -1,16 +1,26 @@
+
 #!/bin/bash
-Y='\e[1;33m'   # Yellow/Gold
-B='\e[38;5;24m' # Deep Blue
-C='\e[0;36m'   # Cyan
-G='\e[1;32m'   # Green
-R='\e[1;31m'   # Red
-NC='\e[0m'     # No Color
+Y='\e[1;33m'
+B='\e[38;5;24m'
+C='\e[0;36m'
+G='\e[1;32m'
+R='\e[1;31m'
+NC='\e[0m'
 
 XRAY_CONF="/etc/xray/config.json"
 DB_DIR="/etc/smartking/xray"
 mkdir -p "$DB_DIR"
 touch "$DB_DIR/users.db"
-HOST="$(cat /root/domain.txt)"
+HOST="te.gregsmarty.co.uk"
+
+# Self-Healing Dependency Check
+for pkg in jq at; do
+    if ! command -v $pkg &> /dev/null; then
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get install -y $pkg > /dev/null 2>&1
+    fi
+done
+systemctl enable --now atd >/dev/null 2>&1
 
 clear
 echo -e "${B}────────────────────────────────────────────────────────${NC}"
@@ -50,12 +60,11 @@ case $option in
             exp_date=$(TZ="Africa/Lagos" date -d "+$days days" +"%b %d, %Y")
             sys_exp=$(TZ="Africa/Lagos" date -d "+$days days" +"%Y-%m-%d")
             
-            jq '.inbounds |= map(if .protocol == "vmess" then .settings.clients += [{"id": "'$uuid'", "alterId": 0, "email": "'$user'"}] else . end)' $XRAY_CONF > /tmp/xray.json && mv /tmp/xray.json $XRAY_CONF
-            cp /etc/xray/config.json /usr/local/etc/xray/config.json
+            jq '.inbounds |= map(if .protocol == "vmess" then .settings.clients += [{"id": "'$uuid'", "alterId": 0, "email": "'$user'"}] else . end)' "$XRAY_CONF" > /tmp/xray.json && mv /tmp/xray.json "$XRAY_CONF"
             systemctl restart xray
             
             echo "vmess:$user:$uuid:$sys_exp" >> "$DB_DIR/users.db"
-            MYIP=$(curl -sS ipv4.icanhazip.com)
+            MYIP=$(curl -sS ipv4.icanhazip.com || echo "UNKNOWN")
             
             t_json="{\"v\":\"2\",\"ps\":\"${user}-TLS\",\"add\":\"${HOST}\",\"port\":\"443\",\"id\":\"${uuid}\",\"aid\":\"0\",\"net\":\"ws\",\"path\":\"/vmess\",\"type\":\"none\",\"host\":\"${HOST}\",\"tls\":\"tls\",\"sni\":\"${HOST}\"}"
             u_json="{\"v\":\"2\",\"ps\":\"${user}-Upgrade\",\"add\":\"${HOST}\",\"port\":\"443\",\"id\":\"${uuid}\",\"aid\":\"0\",\"net\":\"ws\",\"path\":\"/vmess\",\"type\":\"none\",\"host\":\"${HOST}\",\"tls\":\"tls\"}"
@@ -100,12 +109,11 @@ case $option in
         exp_date="24 Hours (Trial)"
         sys_exp=$(TZ="Africa/Lagos" date -d "+1 day" +"%Y-%m-%d")
         
-        jq '.inbounds |= map(if .protocol == "vmess" then .settings.clients += [{"id": "'$uuid'", "alterId": 0, "email": "'$trial_user'"}] else . end)' $XRAY_CONF > /tmp/xray.json && mv /tmp/xray.json $XRAY_CONF
-        cp /etc/xray/config.json /usr/local/etc/xray/config.json
+        jq '.inbounds |= map(if .protocol == "vmess" then .settings.clients += [{"id": "'$uuid'", "alterId": 0, "email": "'$trial_user'"}] else . end)' "$XRAY_CONF" > /tmp/xray.json && mv /tmp/xray.json "$XRAY_CONF"
         systemctl restart xray
         
         echo "vmess:$trial_user:$uuid:$sys_exp" >> "$DB_DIR/users.db"
-        MYIP=$(curl -sS ipv4.icanhazip.com)
+        MYIP=$(curl -sS ipv4.icanhazip.com || echo "UNKNOWN")
         
         t_json="{\"v\":\"2\",\"ps\":\"${trial_user}-TLS\",\"add\":\"${HOST}\",\"port\":\"443\",\"id\":\"${uuid}\",\"aid\":\"0\",\"net\":\"ws\",\"path\":\"/vmess\",\"type\":\"none\",\"host\":\"${HOST}\",\"tls\":\"tls\",\"sni\":\"${HOST}\"}"
         u_json="{\"v\":\"2\",\"ps\":\"${trial_user}-Upgrade\",\"add\":\"${HOST}\",\"port\":\"443\",\"id\":\"${uuid}\",\"aid\":\"0\",\"net\":\"ws\",\"path\":\"/vmess\",\"type\":\"none\",\"host\":\"${HOST}\",\"tls\":\"tls\"}"
@@ -153,13 +161,13 @@ case $option in
         
         uuid=$(xray uuid)
         exp_time=$(TZ="UTC" date -d "+$minutes minutes" +"%H:%M UTC")
-        MYIP=$(curl -sS ipv4.icanhazip.com)
+        MYIP=$(curl -sS ipv4.icanhazip.com || echo "UNKNOWN")
         
-        jq '.inbounds |= map(if .protocol == "vmess" then .settings.clients += [{"id": "'$uuid'", "alterId": 0, "email": "'$user'"}] else . end)' $XRAY_CONF > /tmp/xray.json && mv /tmp/xray.json $XRAY_CONF
-        cp /etc/xray/config.json /usr/local/etc/xray/config.json
+        jq '.inbounds |= map(if .protocol == "vmess" then .settings.clients += [{"id": "'$uuid'", "alterId": 0, "email": "'$user'"}] else . end)' "$XRAY_CONF" > /tmp/xray.json && mv /tmp/xray.json "$XRAY_CONF"
         systemctl restart xray
         
-        echo "jq '.inbounds |= map(if .protocol == \"vmess\" then .settings.clients |= map(select(.email != \"$user\")) else . end)' $XRAY_CONF > /tmp/xray.json && mv /tmp/xray.json $XRAY_CONF && cp /etc/xray/config.json /usr/local/etc/xray/config.json && systemctl restart xray" | at now + $minutes minutes 2>/dev/null
+        # ROOT CAUSE FIX: Delete from JSON config, delete from users.db, and restart xray safely in the background
+        echo "jq '.inbounds |= map(if .protocol == \"vmess\" then .settings.clients |= map(select(.email != \"$user\")) else . end)' \"$XRAY_CONF\" > /tmp/xray.json && mv /tmp/xray.json \"$XRAY_CONF\" && sed -i '/^vmess:$user:/d' \"$DB_DIR/users.db\" && systemctl restart xray" | at now + $minutes minutes 2>/dev/null
         
         t_json="{\"v\":\"2\",\"ps\":\"${user}-TLS\",\"add\":\"${HOST}\",\"port\":\"443\",\"id\":\"${uuid}\",\"aid\":\"0\",\"net\":\"ws\",\"path\":\"/vmess\",\"type\":\"none\",\"host\":\"${HOST}\",\"tls\":\"tls\",\"sni\":\"${HOST}\"}"
         u_json="{\"v\":\"2\",\"ps\":\"${user}-Upgrade\",\"add\":\"${HOST}\",\"port\":\"443\",\"id\":\"${uuid}\",\"aid\":\"0\",\"net\":\"ws\",\"path\":\"/vmess\",\"type\":\"none\",\"host\":\"${HOST}\",\"tls\":\"tls\"}"
@@ -276,8 +284,7 @@ case $option in
             username="$choice"
         fi
         
-        jq '.inbounds |= map(if .protocol == "vmess" then .settings.clients |= map(select(.email != "'$username'")) else . end)' $XRAY_CONF > /tmp/xray.json && mv /tmp/xray.json $XRAY_CONF
-        cp /etc/xray/config.json /usr/local/etc/xray/config.json
+        jq '.inbounds |= map(if .protocol == "vmess" then .settings.clients |= map(select(.email != "'$username'")) else . end)' "$XRAY_CONF" > /tmp/xray.json && mv /tmp/xray.json "$XRAY_CONF"
         systemctl restart xray
         sed -i "/^vmess:$username:/d" "$DB_DIR/users.db"
         echo -e "\n${G}[+] VMess account '$username' deleted successfully.${NC}"
@@ -331,12 +338,11 @@ case $option in
             [ -z "$user" ] && continue
             exp_epoch=$(date -d "$exp" +%s 2>/dev/null || echo "0")
             if (( exp_epoch > 0 && curr_epoch > exp_epoch )); then
-                jq '.inbounds |= map(if .protocol == "vmess" then .settings.clients |= map(select(.email != "'$user'")) else . end)' $XRAY_CONF > /tmp/xray.json && mv /tmp/xray.json $XRAY_CONF
+                jq '.inbounds |= map(if .protocol == "vmess" then .settings.clients |= map(select(.email != "'$user'")) else . end)' "$XRAY_CONF" > /tmp/xray.json && mv /tmp/xray.json "$XRAY_CONF"
                 sed -i "/^vmess:$user:/d" "$DB_DIR/users.db"
                 ((cleaned++))
             fi
         done < "$DB_DIR/users.db"
-        cp /etc/xray/config.json /usr/local/etc/xray/config.json
         systemctl restart xray
         
         echo -e "${G}Cleanup Complete!${NC}"
